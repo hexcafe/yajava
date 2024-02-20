@@ -1,0 +1,20 @@
+root = true
+
+
+[*.c]
+indent_style = space
+indent_size = 2
+# tab_width = 2
+end_of_line = lf # lf, cr, or crlf
+charset = utf-8 # latin1, utf-8, utf-8-bom, utf-16be or utf-16le
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.h]
+indent_style = space
+indent_size = 2
+# tab_width = 2
+end_of_line = lf # lf, cr, or crlf
+charset = utf-8 # latin1, utf-8, utf-8-bom, utf-16be or utf-16le
+trim_trailing_whitespace = true
+insert_final_newline = true
