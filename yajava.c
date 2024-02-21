@@ -171,7 +171,8 @@ char *arg_pop(struct arg_ctx *ctx);
 char *arg_pop_value(struct arg_ctx *ctx);
 void arg_back(struct arg_ctx *ctx);
 bool arg_has(struct arg_ctx *ctx);
-bool arg_build_java_opts(struct yj_run_args *args, JavaVMInitArgs *out);
+bool arg_build_java_opts(struct yj_java_runtime *runtime,
+                         struct yj_run_args *args, JavaVMInitArgs *out);
 bool arg_match_any(char *arg, ...);
 bool arg_match_start(char *arg, char *start);
 bool arg_is_long(char *arg);
@@ -406,7 +407,7 @@ yj_result yj_run(struct yj_java_runtime *runtime, struct yj_run_args *args) {
     goto err;
   }
 
-  if (!arg_build_java_opts(args, &vm_args)) {
+  if (!arg_build_java_opts(runtime, args, &vm_args)) {
     res = YJ_ERR_ARGS;
     goto err;
   }
@@ -764,7 +765,7 @@ bool jvm_create_runtime(char *home, char *lib_path,
   args.nOptions = 0;
   args.options = NULL;
   args.ignoreUnrecognized = true;
-  args.version = JNI_VERSION_1_8;
+  args.version = JNI_VERSION_1_2;
 
   TRACE("CreateJavaVM(%d)", args.nOptions);
   if ((res = fn.CreateJavaVM(&vm, (void **)&env, &args)) != JNI_OK) {
@@ -1219,7 +1220,8 @@ int arg_parse_classpathes(char *in, struct list *list) {
   return YJ_OK;
 }
 
-bool arg_build_java_opts(struct yj_run_args *args, JavaVMInitArgs *out) {
+bool arg_build_java_opts(struct yj_java_runtime *runtime,
+                         struct yj_run_args *args, JavaVMInitArgs *out) {
 
   if (args == NULL || out == NULL) {
     return false;
@@ -1310,7 +1312,9 @@ bool arg_build_java_opts(struct yj_run_args *args, JavaVMInitArgs *out) {
 
   out->nOptions = opts.len;
   out->options = opts.opts;
-  out->version = JNI_VERSION_1_6;
+  out->version = (runtime == NULL || runtime->jni_version <= 0)
+                     ? JNI_VERSION_1_2
+                     : runtime->jni_version;
   out->ignoreUnrecognized = false;
 
   return true;
