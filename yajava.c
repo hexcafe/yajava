@@ -240,11 +240,12 @@ yj_result yj_parse_run_args(int argc, char **argv, struct yj_run_args *args) {
 
     // parse jar
     if (pos == OPTS && arg_match(arg, "-jar")) {
-      char *jarfile = arg_pop_value(&pc);
-      if (pc.args->jarfile != NULL) {
-        free(pc.args->jarfile);
+      char *app_jar = arg_pop_value(&pc);
+      if (pc.args->app_jar != NULL) {
+        free(pc.args->app_jar);
       }
-      pc.args->app_jar = strdup(jarfile);
+      TRACE("add arg -jar: %s", app_jar);
+      pc.args->app_jar = strdup(app_jar);
       pos = ARGS;
     } else if (pos == OPTS && arg_match(arg, "-m", "--module")) {
       char *module_name = arg_pop_value(&pc);
@@ -643,13 +644,18 @@ jclass jvm_find_main_class(struct yj_run_args *args, JNIEnv *env) {
       (*env)->GetStaticMethodID(env, helper, "checkAndLoadMain",
                                 "(ZILjava/lang/String;)Ljava/lang/Class;");
 
+  assert(helper != NULL);
+  assert(method != NULL);
+
   jclass main_class = NULL;
   if (args->app_jar != NULL) { // jar mode 2
+    TRACE("find main class in %s", args->app_jar);
     jstring jar_str = (*env)->NewStringUTF(env, args->app_jar);
     main_class =
         (*env)->CallStaticObjectMethod(env, helper, method, 0, 2, jar_str);
     (*env)->DeleteLocalRef(env, jar_str);
   } else if (args->app_main_class != NULL) { // class method 1
+    TRACE("main class is %s\n", args->app_main_class);
     jstring class_str = (*env)->NewStringUTF(env, args->app_main_class);
     main_class =
         (*env)->CallStaticObjectMethod(env, helper, method, 0, 1, class_str);
@@ -663,6 +669,7 @@ void jvm_exec_main_class(struct yj_run_args *args, JNIEnv *env) {
 
   jclass main_class = jvm_find_main_class(args, env);
   if (main_class == NULL) {
+    TRACE("main class not found\n");
     fprintf(stderr, "main class not found!\n");
     return;
   }
@@ -738,7 +745,7 @@ void jvm_print_args(JavaVMInitArgs *args) {
       TRACE("    %d: %s", i, args->options[i].optionString);
     }
   }
-  TRACE("  version: %d", args->version);
+  TRACE("  version: 0x%x", args->version);
   TRACE("  ignoreUnrecognized: %d", args->ignoreUnrecognized);
 }
 
@@ -1310,6 +1317,7 @@ bool arg_build_java_opts(struct yj_java_runtime *runtime,
     }
   }
 
+  TRACE("build arg jni version: 0x%x\n", runtime->jni_version);
   out->nOptions = opts.len;
   out->options = opts.opts;
   out->version = (runtime == NULL || runtime->jni_version <= 0)

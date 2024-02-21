@@ -41,7 +41,6 @@ struct yj_run_args {
   int javagents_len;
   char **javagents;
   char *splash;
-  char *jarfile;
 
   // application args
   char *app_module;

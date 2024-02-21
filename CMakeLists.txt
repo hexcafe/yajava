@@ -42,7 +42,16 @@ add_test(NAME test_arg COMMAND test_arg)
 add_executable(test_discovery test/test_discovery.c yajava.c trace.c)
 add_test(NAME test_discovery COMMAND test_discovery)
 
-add_test(NAME compile_test_class COMMAND javac -d ${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR}/test/Hello.java)
+if (DEFINED ENV{JAVA_HOME})
+  set(JAVA_CMD $ENV{JAVA_HOME}/bin/java)
+  set(JAVAC_CMD $ENV{JAVA_HOME}/bin/javac)
+else()
+  set(JAVA_CMD java)
+  set(JAVAC_CMD javac)
+endif()
+
+
+add_test(NAME compile_test_class COMMAND ${JAVAC_CMD} -d ${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR}/test/Hello.java)
 add_test(NAME build_test_jar COMMAND jar cfe ${CMAKE_BINARY_DIR}/hello.jar com.example.Hello com/example/Hello.class)
 add_test(NAME test_jar COMMAND $<TARGET_FILE:yajava> -jar hello.jar)
 set_tests_properties(test_jar PROPERTIES DEPENDS "compile_test_class;build_test_jar")
