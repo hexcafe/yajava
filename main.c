@@ -24,7 +24,13 @@
 #define DEFAULT_CMD "run"
 #define CMD_MAXLEN 16
 
+#if __linux__
 #define DEFAULT_JVM_DISCOVERY_PATH "/usr/lib/jvm"
+#elif __APPLE__
+#define DEFAULT_JVM_DISCOVERY_PATH "/Library/Java/JavaVirtualMachines"
+#else
+#error "platform not supported"
+#endif
 
 struct table {
   char *rows[4];

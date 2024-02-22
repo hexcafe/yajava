@@ -74,6 +74,12 @@
   "%s/lib/amd64/server/libjvm.so",                                             \
   "%s/jre/lib/amd64/server/libjvm.so"
 // clang-format on
+#elif __APPLE__
+// clang-format off
+#define LIB_JVM_PATH                                                           \
+  "%s/lib/server/libjvm.dylib",                                                \
+  "%s/jre/lib/server/libjvm.dylib"
+// clang-format on
 #else
 #error platform not supported yet
 #endif
@@ -496,9 +502,22 @@ yj_result yj_java_discovery(char *path, struct yj_java_runtime **out,
         continue;
       }
 
+      TRACE("path: %s", path);
+#if __APPLE__
+      if (!jvm_find_lib(path, lib_path, lib_path_maxlen)) {
+        if (strlen(path) > PATH_MAX - 15) {
+          continue;
+        }
+        strcat(path, "/Contents/Home");
+        if (!jvm_find_lib(path, lib_path, lib_path_maxlen)) {
+          continue;
+        }
+      }
+#else
       if (!jvm_find_lib(path, lib_path, lib_path_maxlen)) {
         continue;
       }
+#endif
 
       struct jvm_home_path pair = {0};
       memcpy(&pair.home, path, strlen(path) * sizeof(char));
@@ -594,10 +613,13 @@ bool jvm_find_lib(char *home, char *lib_path, size_t maxlen) {
   char path_len = 0;
   char *pattern = NULL;
 
+  TRACE("find jvm library in path: %s", home);
+
   for (int i = 0; i < sizeof(patterns) / sizeof(char *); i++) {
     pattern = patterns[i];
     memset(buf, 0, buf_len);
     snprintf(buf, buf_len, pattern, home);
+    TRACE("try %s", buf);
     if (file_exists(buf) && file_is_file(buf)) {
       path_len = strnlen(buf, buf_len - 1);
       if (path_len > maxlen) {
@@ -1040,10 +1062,13 @@ bool file_abs(struct dirent *dir, const char *base, char *out, size_t maxlen) {
   char path_len = 0;
   snprintf(path, PATH_MAX, "%s%c%s", base, FILE_PATH_SEPRATOR, dir->d_name);
 
+  TRACE("orig: %s", path);
+
   memcpy(tmp_path, path, PATH_MAX);
-  if (realpath(path, path) == NULL) {
+  if (realpath(tmp_path, path) == NULL) {
     return false;
   }
+  TRACE("abs: %s", path);
 
   path_len = strlen(path);
   if (maxlen < path_len) {
@@ -1317,7 +1342,7 @@ bool arg_build_java_opts(struct yj_java_runtime *runtime,
     }
   }
 
-  TRACE("build arg jni version: 0x%x\n", runtime->jni_version);
+  TRACE("build arg jni version: 0x%x", runtime->jni_version);
   out->nOptions = opts.len;
   out->options = opts.opts;
   out->version = (runtime == NULL || runtime->jni_version <= 0)
