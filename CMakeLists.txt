@@ -36,6 +36,8 @@ endif()
 
 add_executable(yajava main.c yajava.c trace.c)
 
+install(TARGETS yajava RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
 if (${UNIT_TEST})
   include(CTest)
   add_executable(test_arg test/test_arg.c yajava.c trace.c)
