@@ -393,7 +393,7 @@ yj_result yj_run_async(struct yj_java_runtime *runtime,
   pid_t pid;
   pid = fork();
   if (pid == 0) {
-    if (yj_run(runtime, args)) {
+    if (yj_run(runtime, args) == YJ_OK) {
       exit(0);
     }
     exit(1);
@@ -610,7 +610,7 @@ bool jvm_find_lib(char *home, char *lib_path, size_t maxlen) {
   char *patterns[] = {LIB_JVM_PATH};
   char buf[PATH_MAX] = {0};
   int buf_len = PATH_MAX;
-  char path_len = 0;
+  size_t path_len = 0;
   char *pattern = NULL;
 
   TRACE("find jvm library in path: %s", home);
@@ -1014,7 +1014,7 @@ int jvm_runtime_compare(const void *a, const void *b) {
 
   // compare major version
   int m1 = r1->major_version;
-  int m2 = r1->major_version;
+  int m2 = r2->major_version;
 
   if (m1 == m2) {
     return strcmp(r1->full_version, r2->full_version);
@@ -1059,7 +1059,7 @@ bool file_abs(struct dirent *dir, const char *base, char *out, size_t maxlen) {
 
   char path[PATH_MAX] = {0};
   char tmp_path[PATH_MAX] = {0};
-  char path_len = 0;
+  size_t path_len = 0;
   snprintf(path, PATH_MAX, "%s%c%s", base, FILE_PATH_SEPRATOR, dir->d_name);
 
   TRACE("orig: %s", path);
@@ -1354,7 +1354,7 @@ bool arg_build_java_opts(struct yj_java_runtime *runtime,
 }
 
 inline bool arg_is_long(char *arg) {
-  return strlen(arg) > 2 && arg[0] == '-' & arg[1] == '-';
+  return strlen(arg) > 2 && arg[0] == '-' && arg[1] == '-';
 }
 
 inline char *arg_pop(struct arg_ctx *ctx) { return ctx->argv[ctx->consumed++]; }
